@@ -3,6 +3,7 @@ package com.simplilearn.webservice.controller;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,74 +16,65 @@ import org.springframework.web.bind.annotation.RestController;
 import com.simplilearn.webservice.exception.InvalidProductException;
 import com.simplilearn.webservice.exception.ProductNotFoundException;
 import com.simplilearn.webservice.model.Product;
+import com.simplilearn.webservice.repository.ProductRepository;
 
 @RestController
 @RequestMapping("/api")
 public class ProductController {
-	
-	List<Product> productList = new LinkedList<Product>();
-	
+
+	@Autowired
+	ProductRepository productRepo;
+
 	// list all products
 	@GetMapping("/products")
-	public List<Product> getProducts(){
-		if(productList.isEmpty()) {
+	public List<Product> getProducts() {
+		List<Product> productList = productRepo.findAll();
+		if (productList.isEmpty()) {
 			throw new ProductNotFoundException("Product list is empty, 0 records found");
 		}
 		return productList;
 	}
-	
+
 	// get one product
 	@GetMapping("/products/{id}")
-	public Product getProduct(@PathVariable("id") int id){
-		if(productList.isEmpty()) {
-			throw new ProductNotFoundException("Product list is empty, 0 records found");
-		}
-		
-		for(Product product: productList) {
-			if(product.getId()==id) {
-				return product;
-			}
-		}
-		throw new ProductNotFoundException("Product fetch failed, records not found with id "+id);
+	public Product getProduct(@PathVariable("id") int id) {
+		Product fetchedProduct = productRepo.findById(id).orElseThrow(() -> {
+			throw new ProductNotFoundException("Product fetch failed, records not found with id " + id);
+		});
+		return fetchedProduct;
 	}
-	
+
 	// add product
 	@PostMapping("/products")
-	public List<Product> addProduct(@RequestBody(required=false) Product product) {
-		if(product==null) {
+	public Product addProduct(@RequestBody(required = false) Product product) {
+		if (product == null) {
 			throw new InvalidProductException("Add product failed , Invalid request body");
 		}
-		productList.add(product);
-		return productList;
+		return productRepo.save(product);
 	}
-	
+
 	// update product
 	@PutMapping("/products/{id}")
 	public Product updateProduct(@PathVariable("id") int id, @RequestBody Product product) {
-		if(productList.isEmpty()) {
-			throw new ProductNotFoundException("Product list is empty, 0 records found");
-		}
-		for(int index=0; index<productList.size(); index++) {
-			if(product.getId()==productList.get(index).getId()) {
-				productList.set(index, product);
-				return product;
-			}
-		}
-		throw new ProductNotFoundException("Product update failed, records not found with id "+id);
+		// step : find product
+		Product fetchedProduct = productRepo.findById(id).orElseThrow(() -> {
+			throw new ProductNotFoundException("Product fetch failed, records not found with id " + id);
+		});
+		// step 2: map product update fields
+		fetchedProduct.setName(product.getName());
+		fetchedProduct.setPrice(product.getPrice());
+		fetchedProduct.setDescription(product.getDescription());
+		return productRepo.save(fetchedProduct);
 	}
-	
+
 	// delete product
 	@DeleteMapping("/products/{id}")
-	public Product deleteProduct(@PathVariable("id") int id){		
-		if(productList.isEmpty()) {
-			throw new ProductNotFoundException("Product delete failed, 0 records found");
-		}
-		
-		for(int index=0; index<productList.size(); index++) {
-			if(id==productList.get(index).getId()) {
-				return productList.remove(index);
-			}
-		}
-		throw new ProductNotFoundException("Product delete failed, records not found with id "+id);
+	public String deleteProduct(@PathVariable("id") int id) {
+		// step : find product
+		Product fetchedProduct = productRepo.findById(id).orElseThrow(() -> {
+			throw new ProductNotFoundException("Product fetch failed, records not found with id " + id);
+		});
+		productRepo.delete(fetchedProduct);
+		return "Product deleted successfully !";
 	}
 }

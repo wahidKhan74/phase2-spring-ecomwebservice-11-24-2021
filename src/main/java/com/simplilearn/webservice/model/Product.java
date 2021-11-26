@@ -1,12 +1,30 @@
 package com.simplilearn.webservice.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="ecom_products")
 public class Product {
-	// properties
-	private int id;
-	private String name;
-	private double price;
-	private String description;
 	
+	// properties
+	@Id
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	@Column(name="product_id")
+	private int id;
+	
+	@Column(name="product_name")
+	private String name;
+	
+	@Column(name="product_price")
+	private double price;
+	
+	@Column(name="product_desc")
+	private String description;
 	
 	// constructor
 	public Product(int id, String name, double price, String description) {
